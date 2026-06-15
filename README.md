@@ -39,7 +39,6 @@ Untuk menjalankan bot ini dengan aman tanpa membocorkan data rahasia ke publik, 
 | :--- | :--- | :--- |
 | `TOKEN` | Token rahasia aplikasi bot dari Discord Developer Portal | `MTUxMzY5...` |
 | `CHANNEL_ID` | ID unik dari Voice Channel target tempat bot berjaga | `1515933402270924820` |
-| `VOICE_CHANNEL_ID`| ID cadangan untuk sinkronisasi logika internal suara | `1515933402270924820` |
 | `TEXT_CHANNEL_ID` | ID unik Text Channel tempat bot mengirimkan meme otomatis | `1515933402270924820` |
 | `START_DATE` | Tanggal patokan dimulainya hitungan hari (YYYY-MM-DD) | `2026-06-15` |
 | `CRON` | Jadwal eksekusi otomatis subuh (Format ekspresi cron) | `0 3 * * *` |
