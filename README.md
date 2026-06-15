@@ -13,10 +13,13 @@ The bot runs completely in the cloud on Railway, utilizing the Nixpacks containe
 ## 🎯 Key Features
 
 * **⚡ 24/7 Voice Channel Guard:** Automatically joins the designated Voice Channel upon startup and stays connected indefinitely to keep the server's voice activity active.
-* **🛡️ Anti-Kick & Anti-Move Protection:** If a server moderator or another management bot (like Voice Master) disconnects or moves this bot, it will instantly reconnect within seconds.
+* **🛡️ Smart Anti-Kick & Anti-Move Protection:** If a server moderator or another management bot disconnects or moves this bot, it clean up the corrupted session and routes directly through the centralized recovery system to rejoin the main channel instantly.
+* **🔄 Advanced Error Recovery (Exponential Backoff):** Built with an industry-standard retry state machine. If Discord or Railway experiences network drops, the bot dynamically scales its reconnect delays (2s, 3s, 5s, 7s, up to 10s) to avoid API spamming and rate limits.
+* **📡 Flapping & Rate-Limit Protection:** Automatically monitors high-frequency disconnections (within a 15-second window). If the network goes unstable, it triggers a cooldown state to safeguard the bot's token from getting temporary IP bans.
+* **⏱️ Active Keep-Alive Heartbeat:** Runs an aggressive check every 3 minutes. Even though the bot is completely silent, it fires a native background `configureNetworking()` signal to clear any idle voice timeouts imposed by Discord's gateway.
 * **🔇 Silent & Self-Deafened Mode:** Joins the voice channel as self-muted and self-deafened, ensuring server privacy and zero voice bandwidth consumption.
 * **📅 Automated Daily Meme Generator (Cron Job):** Powered by the native `canvas` graphics library, the bot dynamically edits a baseline template image of Mr. Krab, rendering updated day counters (`DAY 1`, `DAY 2`, etc.) and posting it automatically every day at **03:00 AM WIB (Asia/Jakarta)**.
-* **🔄 On-Demand Manual Check:** Includes an interactive `!ceknganggur` text command allowing server members to manually test and trigger the image generation instantly.
+* **💬 On-Demand Manual Check:** Includes an interactive `!ceknganggur` text command allowing server members to manually test and trigger the image generation instantly.
 
 ---
 
