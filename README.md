@@ -4,75 +4,74 @@
 [![Discord.js](https://img.shields.io/badge/Discord.js-v14-blue?style=for-the-badge&logo=discord)](https://discord.js.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-v20-green?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 
-**Si Krab Nganggur Bot** adalah bot Discord personal berbasis Node.js yang didesain khusus untuk mengamankan jam durasi *Voice Channel* secara nonstop (24/7) di server Discord, sekaligus menghitung hari kelulusan/pengangguran secara otomatis menggunakan media meme dinamis. 
+**Si Krab Nganggur Bot** is a personal Discord bot built with Node.js, specifically designed to secure 24/7 Voice Channel duration stats on a Discord server while automatically tracking and counting milestone days using dynamically generated memes.
 
-Bot ini dideploy secara mandiri di server awan (Cloud) Railway menggunakan sistem kontrol kontainer Nixpacks agar dapat berjalan abadi tanpa memakan daya laptop lokal.
-
----
-
-## 🎯 Kegunaan Utama (Features)
-
-* **⚡ 24/7 Voice Channel Guard:** Bot akan otomatis masuk ke Voice Channel yang ditentukan saat dinyalakan dan menetap di sana selamanya untuk menjaga statistik durasi keaktifan server.
-* **🛡️ Anti-Kick & Anti-Move Protection:** Jika ada *user* atau bot manajemen lain (seperti Voice Master) yang memindahkan atau menendang bot ini keluar dari saluran utama, bot akan otomatis melakukan rekoneksi instan dalam hitungan detik.
-* **🔇 Silent & Self-Deafened Mode:** Bot masuk ke saluran suara dalam kondisi membisu (*self-mute*) dan tuli (*self-deaf*) sehingga tidak akan mengganggu privasi atau memakan bandwitdh suara server.
-* **📅 Automated Daily Meme Generator (Cron Job):** Menggunakan pustaka grafis `canvas`, bot akan otomatis mengedit templat gambar Mr. Krab secara dinamis dan mengirimkan meme bertuliskan update hitungan hari (`DAY 1`, `DAY 2`, dst.) setiap pukul **03:00 WIB Subuh**.
-* **🔄 On-Demand Manual Check:** Menyediakan fitur interaktif perintah teks `!ceknganggur` bagi member server yang ingin memicu pengetesan pembuatan gambar meme secara instan.
+The bot runs completely in the cloud on Railway, utilizing the Nixpacks container build system to ensure 24/7 uptime without consuming any local hardware resources.
 
 ---
 
-## 🛠️ Teknologi & Pustaka yang Digunakan
+## 🎯 Key Features
+
+* **⚡ 24/7 Voice Channel Guard:** Automatically joins the designated Voice Channel upon startup and stays connected indefinitely to keep the server's voice activity active.
+* **🛡️ Anti-Kick & Anti-Move Protection:** If a server moderator or another management bot (like Voice Master) disconnects or moves this bot, it will instantly reconnect within seconds.
+* **🔇 Silent & Self-Deafened Mode:** Joins the voice channel as self-muted and self-deafened, ensuring server privacy and zero voice bandwidth consumption.
+* **📅 Automated Daily Meme Generator (Cron Job):** Powered by the native `canvas` graphics library, the bot dynamically edits a baseline template image of Mr. Krab, rendering updated day counters (`DAY 1`, `DAY 2`, etc.) and posting it automatically every day at **03:00 AM WIB (Asia/Jakarta)**.
+* **🔄 On-Demand Manual Check:** Includes an interactive `!ceknganggur` text command allowing server members to manually test and trigger the image generation instantly.
+
+---
+
+## 🛠️ Built With
 
 * **Runtime:** Node.js (v20)
-* **Library Utama:** `discord.js` (v14) & `@discordjs/voice` (untuk koneksi suara)
-* **Gambar & Grafis:** `canvas` (Pustaka native pengetikan teks di atas gambar)
-* **Penjadwal:** `node-cron` (Untuk pemicu otomatis jam 3 subuh)
-* **Zona Waktu:** `luxon` (Memastikan sinkronisasi Waktu Indonesia Barat / Asia Jakarta)
-* **Deployment Engine:** Nixpacks (Untuk penyediaan dependensi grafis Linux `cairo` & `pango` di Railway)
+* **Core Library:** `discord.js` (v14) & `@discordjs/voice` (for handling voice connections)
+* **Graphics Engine:** `canvas` (for rendering dynamic text onto image assets)
+* **Scheduler:** `node-cron` (for triggering the automated daily 3 AM task)
+* **Timezone Handler:** `luxon` (to precisely sync with Western Indonesian Time / Asia/Jakarta)
+* **Deployment Engine:** Nixpacks (for providing underlying Linux system graphics dependencies like `cairo` & `pango` on Railway)
 
 ---
 
-## ⚙️ Variabel Lingkungan (Environment Variables)
+## ⚙️ Environment Variables
 
-Untuk menjalankan bot ini dengan aman tanpa membocorkan data rahasia ke publik, konfigurasi wajib dimasukkan melalui panel *Environment Variables* di platform hosting:
+To keep sensitive configuration details secure, all required settings must be configured via the platform's environment variables panel:
 
-| Nama Variabel | Deskripsi | Contoh Nilai |
+| Variable Name | Description | Example Value |
 | :--- | :--- | :--- |
-| `TOKEN` | Token rahasia aplikasi bot dari Discord Developer Portal | `MTUxMzY5...` |
-| `CHANNEL_ID` | ID unik dari Voice Channel target tempat bot berjaga | `1515933402270924820` |
-| `VOICE_CHANNEL_ID`| ID cadangan untuk sinkronisasi logika internal suara | `1515933402270924820` |
-| `TEXT_CHANNEL_ID` | ID unik Text Channel tempat bot mengirimkan meme otomatis | `1515933402270924820` |
-| `START_DATE` | Tanggal patokan dimulainya hitungan hari (YYYY-MM-DD) | `2026-06-15` |
-| `CRON` | Jadwal eksekusi otomatis subuh (Format ekspresi cron) | `0 3 * * *` |
-| `TZ` | Pengaturan zona waktu wilayah server | `Asia/Jakarta` |
-| `SELF_MUTE` | Status membisu bot saat berada di saluran suara | `true` |
-| `SELF_DEAF` | Status menulikan bot saat berada di saluran suara | `true` |
+| `TOKEN` | The secret application token from the Discord Developer Portal | `MTUxMzY5...` |
+| `CHANNEL_ID` | Unique ID of the target Voice Channel where the bot will stay | `1515933402270924820` |
+| `TEXT_CHANNEL_ID` | Unique ID of the Text Channel where the bot will post memes | `1515933402270924820` |
+| `START_DATE` | Base date to begin the day counter calculations (YYYY-MM-DD) | `2026-06-15` |
+| `CRON` | Execution schedule for the automatic meme generator | `0 3 * * *` |
+| `TZ` | Target server environment timezone | `Asia/Jakarta` |
+| `SELF_MUTE` | Keeps the bot muted while inside a voice channel | `true` |
+| `SELF_DEAF` | Keeps the bot deafened while inside a voice channel | `true` |
 
 ---
 
-## 🚀 Cara Memakai & Menjalankan Bot
+## 🚀 Deployment & Local Setup
 
-### 1. Persiapan Awal di Discord Developer Portal
-1. Buat aplikasi baru di [Discord Developer Portal](https://discord.com/developers/applications).
-2. Masuk ke tab **Bot**, lalu aktifkan bagian **Privileged Gateway Intents** (`Presence`, `Server Members`, dan `Message Content`).
-3. Salin token bot Anda dan masukkan ke konfigurasi hosting.
-4. Undang bot ke server Anda menggunakan menu **OAuth2 URL Generator** dengan mencentang ruang lingkup `bot` dan izin `Connect`, `Speak`, `Send Messages`, dan `View Channels`.
+### 1. Prerequisites (Discord Developer Portal)
+1. Create a new application on the [Discord Developer Portal](https://discord.com/developers/applications).
+2. Navigate to the **Bot** tab and enable all **Privileged Gateway Intents** (`Presence`, `Server Members`, and `Message Content`).
+3. Copy your Bot Token and save it securely.
+4. Invite the bot to your guild using the **OAuth2 URL Generator** tool by selecting the `bot` scope along with the following permissions: `Connect`, `Speak`, `Send Messages`, and `View Channels`.
 
-### 2. Cara Menjalankan Secara Lokal (Development)
-Jika Anda ingin mencoba menjalankannya di komputer lokal menggunakan VS Code:
-1. Gandakan repositori ini atau unduh berkasnya.
-2. Buat sebuah berkas bernama `.env` di folder utama dan isi dengan daftar variabel di atas.
-3. Buka terminal di VS Code, lalu instal dependensi paket:
+### 2. Local Development Setup
+If you want to run the project locally on your machine:
+1. Clone or download this repository.
+2. Create a `.env` file in the root directory and populate it with the required environment variables listed above.
+3. Install the project dependencies:
    ```bash
    npm install
-4. Jalankan bot menggunakan perintah:
+4. Start the application:
    ```bash
    npm start
 
-### 3. Cara Deployment ke Awan (Railway)
-1. Unggah seluruh kode proyek ini ke repositori personal GitHub Anda (pastikan file .env sudah terdaftar di .gitignore).
-2. Masuk ke dasbor Railway.app dan buat proyek baru via opsi Deploy from GitHub repo.
-3. Masuk ke tab Variables di Railway, lalu klik Raw Editor dan masukkan seluruh daftar konfigurasi variabel lingkungan Anda tanpa tanda petik.
-4. Railway akan membaca berkas nixpacks.toml secara otomatis untuk merakit dependensi grafis Linux, dan bot Anda akan langsung aktif 24/7 secara otomatis!
+### 4. Deploying to Cloud (Railway)
+1. Push this entire codebase to your personal public/private GitHub repository (ensure your .env file is excluded via .gitignore).
+2. Log into Railway.app and create a new project via Deploy from GitHub repo.
+3. Head over to the Variables tab on Railway, open the Raw Editor, and paste all environment configurations cleanly without quotation marks.
+4. Railway will automatically process the nixpacks.toml file to compile the required Linux graphics packages. Your bot will be up and running 24/7!
 
-💬 Perintah Teks (Commands)
-!ceknganggur – Meminta bot untuk secara instan membuat dan mengirimkan cuplikan meme Mr. Krab sesuai jumlah hari yang telah berjalan sejak tanggal START_DATE.
+💬 Chat Commands
+!ceknganggur – Triggers the bot to immediately generate and reply with the processed Mr. Krab meme representing the current day count milestone elapsed since the START_DATE.
