@@ -40,16 +40,70 @@ const client = new Client({
 });
 
 let isConnecting = false;
+let reconnectTimer = null;
+let disconnectAttempts = 0;
+let lastRecoveryAt = 0;
+let lastDisconnectAt = 0;
+let recoveryCooldownActive = false;
+
+const getReconnectDelay = () => {
+    const attempt = Math.min(disconnectAttempts, 5);
+    return [2000, 3000, 5000, 7000, 10000][attempt - 1] || 10000;
+};
+
+const scheduleReconnect = () => {
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+    }
+
+    const now = Date.now();
+    const cooldown = now - lastRecoveryAt < 2000 ? 2000 : 0;
+    const delay = Math.max(getReconnectDelay(), cooldown);
+
+    reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        lastRecoveryAt = Date.now();
+        console.log(`[RECOVER] Mencoba reconnect ke voice channel (upaya ${disconnectAttempts}) setelah ${delay}ms...`);
+        connectToVoice();
+    }, delay);
+};
+
+const markDisconnect = () => {
+    const now = Date.now();
+    if (lastDisconnectAt && now - lastDisconnectAt < 15_000) {
+        recoveryCooldownActive = true;
+    } else {
+        recoveryCooldownActive = false;
+    }
+    lastDisconnectAt = now;
+};
+
+const resetReconnectState = () => {
+    disconnectAttempts = 0;
+    lastDisconnectAt = 0;
+    recoveryCooldownActive = false;
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+};
 
 // --- FUNGSI PENJAGA VOICE CHANNEL 24/7 ---
 const connectToVoice = async () => {
-    if (isConnecting) return; 
-    isConnecting = true;
+    if (isConnecting) return;
 
     try {
         const channel = await client.channels.fetch(CHANNEL_ID).catch(() => null);
-        if (!channel) {
+        if (!channel || !channel.guild) {
             console.error(`[GUARD] Gagal: Voice Channel ID tidak ditemukan di server atau bot tidak punya akses membaca channel.`);
+            isConnecting = false;
+            return;
+        }
+
+        const existingConnection = getVoiceConnection(channel.guild.id);
+        if (existingConnection && existingConnection.state.status === VoiceConnectionStatus.Ready) {
+            resetReconnectState();
+            console.log(`[GUARD] Sudah terhubung di VC ${channel.name}, melewati reconnect.`);
             isConnecting = false;
             return;
         }
@@ -62,37 +116,53 @@ const connectToVoice = async () => {
             return;
         }
 
+        isConnecting = true;
         console.log(`[GUARD] Mencoba mengamankan Voice Channel: ${channel.name}...`);
 
         const connection = joinVoiceChannel({
             channelId: channel.id,
-            guildId: channel.guild.id, 
+            guildId: channel.guild.id,
             adapterCreator: channel.guild.voiceAdapterCreator,
             selfDeaf: process.env.SELF_DEAF === "true",
             selfMute: process.env.SELF_MUTE === "true",
         });
 
         connection.once(VoiceConnectionStatus.Ready, () => {
+            resetReconnectState();
             console.log(`[GUARD] Bot sukses terhubung di VC ${channel.name}!`);
             isConnecting = false;
         });
 
         connection.on(VoiceConnectionStatus.Disconnected, () => {
-            console.log(`[GUARD] Deteksi Terputus! Mencoba masuk kembali dalam 5 detik...`);
+            disconnectAttempts += 1;
+            markDisconnect();
+            console.log(`[GUARD] Deteksi Terputus! Memulai reconnect ke-${disconnectAttempts}...`);
             connection.destroy();
             isConnecting = false;
-            setTimeout(connectToVoice, 5000);
+            scheduleReconnect();
+        });
+
+        connection.on(VoiceConnectionStatus.Destroyed, () => {
+            disconnectAttempts += 1;
+            markDisconnect();
+            console.log(`[GUARD] Koneksi voice dihancurkan. Menyiapkan reconnect ke-${disconnectAttempts}...`);
+            isConnecting = false;
+            scheduleReconnect();
         });
 
         connection.on('error', error => {
+            disconnectAttempts += 1;
+            markDisconnect();
             console.error(`[ERROR] Masalah pada jaringan suara Discord: ${error.message}`);
             isConnecting = false;
+            scheduleReconnect();
         });
 
     } catch (e) {
+        disconnectAttempts += 1;
         console.error(`[ERROR] Gagal total saat mencoba masuk Voice: ${e.message}`);
         isConnecting = false;
-        setTimeout(connectToVoice, 10_000);
+        scheduleReconnect();
     }
 };
 
@@ -100,12 +170,19 @@ const connectToVoice = async () => {
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (newState.member.id === client.user.id) {
         if (!newState.channelId) {
-            console.log(`[ANTI-KICK] Seseorang telah memutus bot dari VC! Meluncur kembali...`);
-            connectToVoice();
+            console.log(`[ANTI-KICK] Seseorang telah memutus bot dari VC! Menyerahkan pemulihan ke sistem recovery...`);
+            // Biarkan connection.on('Disconnected') atau Heartbeat yang mengeksekusi agar rapi satu pintu
         } 
         else if (newState.channelId !== CHANNEL_ID) {
-            console.log(`[ANTI-MOVE] Bot dipindahkan! Memaksa kembali ke saluran utama...`);
-            connectToVoice();
+            console.log(`[ANTI-MOVE] Bot dipindahkan! Menghancurkan koneksi salah agar memicu sistem recovery otomatis...`);
+            const connection = getVoiceConnection(newState.guild.id);
+            if (connection) {
+                isConnecting = false;
+                connection.destroy(); // Biarkan event 'Destroyed' yang mengurus panggilan connectToVoice via scheduleReconnect()
+            } else {
+                isConnecting = false;
+                connectToVoice();
+            }
         }
     }
 });
@@ -149,17 +226,31 @@ client.on('ready', async () => {
     
     await connectToVoice();
     
-    // Heartbeat 15 menit
+    // Heartbeat lebih aktif setiap 3 menit untuk menjaga voice tetap stabil
     setInterval(async () => {
+        console.log(`[HEARTBEAT] Memeriksa status keaktifan di Voice Channel...`);
         const channel = await client.channels.fetch(CHANNEL_ID).catch(() => null);
         if (channel && channel.guild) {
-            const connection = getVoiceConnection(channel.guild.id); 
-            if (!connection || connection.state.status === VoiceConnectionStatus.Disconnected) {
-                console.log(`[HEARTBEAT] Deteksi koneksi kosong/mati suri, memicu re-connect...`);
-                connectToVoice();
+            const connection = getVoiceConnection(channel.guild.id);
+
+            if (!connection) {
+                console.log(`[HEARTBEAT] Koneksi tidak ditemukan. Memaksa masuk ulang...`);
+                await connectToVoice();
+            } else if (connection.state.status !== VoiceConnectionStatus.Ready) {
+                console.log(`[HEARTBEAT] Koneksi tidak stabil. Memaksa masuk ulang...`);
+                if (connection) connection.destroy();
+                isConnecting = false;
+                await connectToVoice();
+            } else {
+                connection.configureNetworking();
+                if (recoveryCooldownActive) {
+                    console.log(`[HEARTBEAT] Gangguan berulang terdeteksi, menjaga recovery lebih agresif.`);
+                } else {
+                    console.log(`[HEARTBEAT] Koneksi aman dan aktif.`);
+                }
             }
         }
-    }, 15 * 60 * 1000);
+    }, 3 * 60 * 1000); // Cek setiap 3 menit
 });
 
 // --- FITUR MANUAL COMMAND ---
