@@ -6,14 +6,14 @@ import { DateTime } from "luxon";
 import generateMeme from "./meme.js";
 
 const TOKEN = process.env.TOKEN?.trim();
-const VOICE_CHANNEL_ID = process.env.CHANNEL_ID?.trim();
+const CHANNEL_ID = process.env.CHANNEL_ID?.trim();
 const TEXT_CHANNEL_ID = process.env.TEXT_CHANNEL_ID?.trim();
 const TIMEZONE = process.env.TZ || "Asia/Jakarta";
 
 // --- VALIDASI AWAL ENVIRONMENT VARIABLES ---
 const missingEnv = [
     !TOKEN && "TOKEN",
-    !VOICE_CHANNEL_ID && "CHANNEL_ID",
+    !CHANNEL_ID && "CHANNEL_ID",
     !TEXT_CHANNEL_ID && "TEXT_CHANNEL_ID",
     !process.env.START_DATE && "START_DATE"
 ].filter(Boolean);
@@ -47,7 +47,7 @@ const connectToVoice = async () => {
     isConnecting = true;
 
     try {
-        const channel = await client.channels.fetch(VOICE_CHANNEL_ID).catch(() => null);
+        const channel = await client.channels.fetch(CHANNEL_ID).catch(() => null);
         if (!channel) {
             console.error(`[GUARD] Gagal: Voice Channel ID tidak ditemukan di server atau bot tidak punya akses membaca channel.`);
             isConnecting = false;
@@ -103,7 +103,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
             console.log(`[ANTI-KICK] Seseorang telah memutus bot dari VC! Meluncur kembali...`);
             connectToVoice();
         } 
-        else if (newState.channelId !== VOICE_CHANNEL_ID) {
+        else if (newState.channelId !== CHANNEL_ID) {
             console.log(`[ANTI-MOVE] Bot dipindahkan! Memaksa kembali ke saluran utama...`);
             connectToVoice();
         }
@@ -151,7 +151,7 @@ client.on('ready', async () => {
     
     // Heartbeat 15 menit
     setInterval(async () => {
-        const channel = await client.channels.fetch(VOICE_CHANNEL_ID).catch(() => null);
+        const channel = await client.channels.fetch(CHANNEL_ID).catch(() => null);
         if (channel && channel.guild) {
             const connection = getVoiceConnection(channel.guild.id); 
             if (!connection || connection.state.status === VoiceConnectionStatus.Disconnected) {
