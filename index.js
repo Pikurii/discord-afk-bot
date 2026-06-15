@@ -5,20 +5,28 @@ import { joinVoiceChannel, VoiceConnectionStatus, getVoiceConnection } from "@di
 import { DateTime } from "luxon";
 import generateMeme from "./meme.js";
 
-const TOKEN = process.env.TOKEN;
-const VOICE_CHANNEL_ID = process.env.CHANNEL_ID;
-const TEXT_CHANNEL_ID = process.env.TEXT_CHANNEL_ID;
+const TOKEN = process.env.TOKEN?.trim();
+const VOICE_CHANNEL_ID = process.env.CHANNEL_ID?.trim();
+const TEXT_CHANNEL_ID = process.env.TEXT_CHANNEL_ID?.trim();
 const TIMEZONE = process.env.TZ || "Asia/Jakarta";
 
 // --- VALIDASI AWAL ENVIRONMENT VARIABLES ---
-if (!TOKEN || !VOICE_CHANNEL_ID || !TEXT_CHANNEL_ID || !process.env.START_DATE) {
-    console.error("[VALIDASI] Eror: Konfigurasi di berkas .env belum lengkap!");
+const missingEnv = [
+    !TOKEN && "TOKEN",
+    !VOICE_CHANNEL_ID && "CHANNEL_ID",
+    !TEXT_CHANNEL_ID && "TEXT_CHANNEL_ID",
+    !process.env.START_DATE && "START_DATE"
+].filter(Boolean);
+
+if (missingEnv.length > 0) {
+    console.error(`[VALIDASI] Env belum lengkap. Variabel yang kurang: ${missingEnv.join(", ")}`);
+    console.error("[VALIDASI] Di Railway, isi variabel tersebut di Settings > Variables / Environment.");
     process.exit(1);
 }
 
 const start = DateTime.fromISO(process.env.START_DATE, { zone: TIMEZONE });
 if (!start.isValid) {
-    console.error("[VALIDASI] Eror: Format START_DATE di .env salah (Harus YYYY-MM-DD)!");
+    console.error("[VALIDASI] Eror: Format START_DATE salah (Harus YYYY-MM-DD)!");
     process.exit(1);
 }
 

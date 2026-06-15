@@ -1,7 +1,14 @@
+import path from "path";
 import Canvas, { registerFont } from "canvas";
 
-// Daftarkan Font agar meme memiliki gaya font ala 9GAG klasik
-registerFont(`./assets/fonts/Impact.ttf`, { family: "Impact" });
+let memeFont = "sans-serif";
+
+try {
+    registerFont(path.resolve(process.cwd(), "assets/fonts/Impact.ttf"), { family: "Impact" });
+    memeFont = "Impact";
+} catch (error) {
+    console.warn("[MEME] Font Impact tidak bisa dipakai, fallback ke font sistem:", error.message);
+}
 
 // Fungsi otomatis untuk memotong teks jika terlalu panjang agar tidak keluar dari gambar
 const wrapText = (ctx, text, maxWidth) => {
@@ -32,7 +39,7 @@ const generateMeme = async (imageSrc, topText, bottomText) => {
 
     // Konfigurasi style teks
     const fontSize = Math.round(base.height / 10);
-    ctx.font = `bold ${fontSize}px Impact`;
+    ctx.font = `bold ${fontSize}px ${memeFont}`;
     ctx.textAlign = "center";
     ctx.lineWidth = 5;
     ctx.strokeStyle = "black";
